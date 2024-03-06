@@ -1,0 +1,12 @@
+config.*
+*.o
+*.so
+*.in
+compile
+install-sh
+Makefile
+aclocal.m4
+missing
+configure
+autom4te*
+

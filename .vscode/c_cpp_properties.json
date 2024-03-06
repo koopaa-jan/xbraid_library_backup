@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/jangr/dockerdir/docker-cluster/install/ompi/include",
+                "/usr/local/include",
+                "/usr/include",
+                "/home/jangr/dockerdir/docker-cluster/build/xbraid/braid"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}

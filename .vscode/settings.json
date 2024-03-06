@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "_braid.h": "c",
+        "braid_dyn.h": "c",
+        "string.h": "c"
+    }
+}
