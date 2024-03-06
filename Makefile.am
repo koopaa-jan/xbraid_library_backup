@@ -40,4 +40,4 @@ install:
 	
 
 clean:
-	rm -f src/build/*.o src/build/libxbraid_dyn.so src/ex-01_dyn.o ex-01_dyn ex-01.out.* ex-heat_equation ex-h_e.out.*
+	rm -f src/build/*.o src/build/libxbraid_dyn.so src/ex-01_dyn.o ex-01_dyn ex-01_dyn.out.* ex-heat_equation ex-h_e.out.*

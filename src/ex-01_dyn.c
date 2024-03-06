@@ -152,7 +152,7 @@ my_Access(braid_App          app,
     int        iteration = 0;
 
     braid_AccessStatusGetTIndex(astatus, &index);
-    sprintf(filename, "%s.%d.%04d.%03d", "ex-01.out", iteration, index, app->rank);
+    sprintf(filename, "%s.%d.%04d.%03d", "ex-01_dyn.out", iteration, index, app->rank);
 
     file = fopen(filename, "r");
 
@@ -160,7 +160,7 @@ my_Access(braid_App          app,
         iteration++;
         fclose(file);
 
-        sprintf(filename, "%s.%d.%04d.%03d", "ex-01.out", iteration, index, app->rank);
+        sprintf(filename, "%s.%d.%04d.%03d", "ex-01_dyn.out", iteration, index, app->rank);
 
         file = fopen(filename, "r");
     }

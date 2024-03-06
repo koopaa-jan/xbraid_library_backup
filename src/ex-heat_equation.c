@@ -25,12 +25,14 @@
  * User-defined routines and structures
  *--------------------------------------------------------------------------*/
 
-#define SIZE 5 // number of temperature points, number of spatical points in the grid
-#define NTIME 100 // number of time steps to simulate
+#define SIZE 50000 // number of temperature points, number of spatical points in the grid, attention > 100000 too big
+#define NTIME 2000 // number of time steps to simulate attention, > 5000 crashed computer
 #define ALPHA 1.0 // thermal diffusivity of the material, indicated how quickly the material conducts heat
 #define DT 0.01 // time step size
 #define DX 1.0 // distance between spacial points 
-#define TSTOP 1.0 // end of time period, NTIME * DT
+#define TSTOP 20.0 // end of time period, NTIME * DT
+
+// CFL: alpha * DT / DX^2 <= 1/2 then the simulation is considered stable
 
 /* App structure can contain anything, and be named anything as well */
 typedef struct _braid_App_struct
@@ -51,9 +53,17 @@ my_Step(braid_App        app,
         braid_Vector     u,
         braid_StepStatus status)
 {
+    double tstart;             /* current time */
+    double tstop;              /* evolve to this time*/
+    braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
+
+    double val_old_prior = u->value[0];
+
     for (int i = 1; i < SIZE - 1; i++) {
-        double dubt = ALPHA * (u->value[i+1] - 2 * u->value[i] + u->value[i-1]) / (DX * DX);
-        u->value[i] += DT * dubt;
+        double val = val_old_prior;
+        val_old_prior = u->value[i];
+        
+        u->value[i] += (tstop - tstart) * ALPHA * (u->value[i+1] - 2 * u->value[i] + val) / (DX * DX);
     }
 
     return 0;
@@ -67,17 +77,27 @@ my_Init(braid_App     app,
     my_Vector *u;
 
     u = (my_Vector *) malloc(sizeof(my_Vector));
-    
-    // for (int i = 0; i < SIZE; i++) {
-    //     u->value[i] = sin(M_PI * i / (SIZE - 1));
-    // }
 
-    // another example when the heat is only comming from the middle of the grid
-    for (int i = 0; i < SIZE; i++) {
-        u->value[i] = 0.0; // Initial temperature
+    if (t == 0.0) {
+        // example when the heat is only comming from the middle of the grid
+        // for (int i = 0; i < SIZE; i++) {
+        //     u->value[i] = 1.0; // Initial temperatures
+        // }
+        // Set initial condition
+        // u->value[0] = 1.0; // Heat source on the left
+        // u->value[SIZE / 2] = 1.0; // Heat source in the middle
+
+        // sin wave between 0 and 1
+        for (int i = 0; i < SIZE; i++) {
+            u->value[i] = 0.5 + 0.5 * sin(2 * M_PI * i / SIZE); // Sine wave between 0 and 1
+        }
+    } else {
+        for (int i = 0; i < SIZE; i++) {
+            u->value[i] = 0.5; // random
+        }
     }
-    // Set initial condition
-    u->value[SIZE / 2] = 1.0; // Heat source in the middle
+
+    // printf("for t = %f values are: %f  %f  %f  %f  %f\n", t, u->value[0], u->value[1], u->value[2], u->value[3], u->value[4]);
 
     *u_ptr = u;
 
@@ -149,7 +169,7 @@ my_Access(braid_App          app,
     int        iteration = 0;
 
     braid_AccessStatusGetTIndex(astatus, &index);
-    sprintf(filename, "%s.%d.%04d.%03d", "ex-h_e.out", iteration, index, app->rank);
+    sprintf(filename, "%s.%04d.%04d.%03d", "ex-h_e.out", iteration, index, app->rank);
 
     file = fopen(filename, "r");
 
@@ -157,16 +177,16 @@ my_Access(braid_App          app,
         iteration++;
         fclose(file);
 
-        sprintf(filename, "%s.%d.%04d.%03d", "ex-h_e.out", iteration, index, app->rank);
+        sprintf(filename, "%s.%04d.%04d.%03d", "ex-h_e.out", iteration, index, app->rank);
 
         file = fopen(filename, "r");
     }
     if (!(iteration != 0 && index == 0)) {
         file = fopen(filename, "w");
         for (int i = 0; i < SIZE; i++) {
-            fprintf(file, "%.14e  ", u->value[i]);
+            fprintf(file, "%f ", u->value[i]);
         }
-        fprintf(file, " \n");
+        fprintf(file, "\n");
         fflush(file);
         fclose(file);
     }
@@ -200,7 +220,7 @@ my_BufPack(braid_App          app,
 {
     double *dbuffer = buffer;
 
-    memcpy(dbuffer, u->value, SIZE);
+    memcpy(dbuffer, u->value, sizeof(double) * SIZE);
     braid_BufferStatusSetSize( bstatus, sizeof(double) * SIZE );
 
     return 0;
@@ -216,7 +236,7 @@ my_BufUnpack(braid_App          app,
     my_Vector *u;
 
     u = (my_Vector *) malloc(sizeof(my_Vector));
-    memcpy(u->value, dbuffer, SIZE);
+    memcpy(u->value, dbuffer, sizeof(double) * SIZE);
     *u_ptr = u;
 
     return 0;

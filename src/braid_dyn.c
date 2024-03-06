@@ -298,7 +298,7 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
             //last processor gets solution vector
             // printf("getting UGetLast of last processor\n");
             _braid_UGetLast(core, &transfer_vector);
-            // _braid_CoreFcn(core, getValue)(transfer_vector->userVector);
+            // _braid_CoreDynFcn(core_dyn, getValue)(transfer_vector->userVector);
          } else {
             // get sol vector from processes with the last time step that is not the last process, so UGetLast cant be used
             _braid_Grid **grids = _braid_CoreElt(core, grids);
@@ -322,7 +322,7 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
             _braid_CoreFcn(core, bufunpack)(app, buffer, &transfer_vector->userVector, bstatus);
 
             // printf("after receiving\n");
-            // _braid_CoreFcn(core, getValue)(transfer_vector->userVector);
+            // _braid_CoreDynFcn(core_dyn, getValue)(transfer_vector->userVector);
          }
       }
 
@@ -341,8 +341,8 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       braid_Real ltime_procs = _braid_MPI_Wtime(core, 1);
       
       // changing amount of processes
-      braid_Int num_procs_sub = 1;
-      braid_Int num_procs_add = 0;
+      braid_Int num_procs_sub = 0;
+      braid_Int num_procs_add = 2;
 
       // if adding or removing isnt possible, continue without adjusting
       if (((num_procs_add == 0) && (size - num_procs_sub > 0)) || ((size + num_procs_add <= max_procs) && (num_procs_sub == 0))) {
