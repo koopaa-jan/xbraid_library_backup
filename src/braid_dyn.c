@@ -212,16 +212,16 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
 
    //making sure interval_len is a valid timestemp
    braid_Real trange_per_ts = globalinterval / ntime;
-
-   if (interval_len <= tstart || interval_len > tstop) {
-      interval_len = tstop;
+   
+   if (interval_len <= globaltstart - tstart || interval_len > globalinterval) {
+      interval_len = globalinterval;
    } else {
       braid_Int rem = ceil(interval_len / trange_per_ts);
 
-      interval_len = trange_per_ts * rem;
+      interval_len = trange_per_ts * rem + tstart;
 
-      if (interval_len == 0) {
-         interval_len = trange_per_ts;
+      if (interval_len == tstart) {
+         interval_len = trange_per_ts + tstart;
       }
    }
 

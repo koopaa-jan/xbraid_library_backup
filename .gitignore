@@ -2,6 +2,12 @@ config.*
 *.o
 *.so
 *.in
+ex-h_e.out.*
+ex-h_e_2D.out.*
+ex-01_dyn.out.*
+ex-01_dyn
+ex-heat_equation
+ex-heat_equation_2D
 compile
 install-sh
 Makefile

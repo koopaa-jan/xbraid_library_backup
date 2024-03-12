@@ -4,7 +4,7 @@ CFLAGS = -Wall -fPIC $(AM_CFLAGS)
 LIBS = -lm $(AM_LDFLAGS) -lmpi -Wl,-Bstatic -lbraid -Wl,-Bdynamic
 
 # Targets
-all: src/build/libxbraid_dyn.so ex-01_dyn ex-heat_equation
+all: src/build/libxbraid_dyn.so ex-01_dyn ex-heat_equation ex-heat_equation_2D
 
 src/build/libxbraid_dyn.so: src/build/braid_dyn.o src/build/dmr_dyn.o src/build/uvector_dyn.o
 	$(CC) -shared -o $@ $^ $(LIBS)
@@ -30,6 +30,12 @@ ex-heat_equation: src/ex-heat_equation.o
 src/ex-heat_equation.o: src/ex-heat_equation.c
 	$(CC) -c $(CFLAGS) $(INCLUDES) $< -o $@
 
+ex-heat_equation_2D: src/ex-heat_equation_2D.o
+	$(CC) $(CFLAGS) $(INCLUDES) src/ex-heat_equation_2D.o -o $@ $(LIBS) -L/opt/hpc/build/xbraid_library_dyn/src/build -lxbraid_dyn -Wl,-rpath,/opt/hpc/build/xbraid_library_dyn/src/build
+
+src/ex-heat_equation_2D.o: src/ex-heat_equation_2D.c
+	$(CC) -c $(CFLAGS) $(INCLUDES) $< -o $@
+
 install:
 	install -d $(DESTDIR)$(prefix)/lib
 	install -m 755 src/build/libxbraid_dyn.so $(DESTDIR)$(prefix)/lib
@@ -40,4 +46,4 @@ install:
 	
 
 clean:
-	rm -f src/build/*.o src/build/libxbraid_dyn.so src/ex-01_dyn.o ex-01_dyn ex-01_dyn.out.* ex-heat_equation ex-h_e.out.*
+	rm -f src/build/*.o src/build/libxbraid_dyn.so src/ex-01_dyn.o ex-01_dyn ex-01_dyn.out.* ex-heat_equation ex-h_e.out.* ex-heat_equation_2D ex-h_e_2D.out.*

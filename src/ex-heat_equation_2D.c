@@ -1,13 +1,13 @@
 /**
- * Example:       ex-heat_equation.c
+ * Example:       ex-heat_equation_2D.c
  *
  * Interface:     C
  * 
  * Requires:      only C-language support     
  *
- * Compile with:  make ex-heat_equation
+ * Compile with:  make ex-heat_equation_2D
  * 
- * Sample run:    mpirun -np 2 --host n01,n02 ex-heat_equation 1.0 2
+ * Sample run:    mpirun -np 2 --host n01,n02 ex-heat_equation_2D 1.0 2
  * 
  **/
 
@@ -29,12 +29,9 @@
 #define NTIME 100 // number of time steps to simulate attention, > 5000 crashed computer, 2000 good size
 #define ALPHA 1.0 // thermal diffusivity of the material, indicated how quickly the material conducts heat
 #define DT 0.01 // time step size
-#define DX 1.0 // distance between spacial points 
+#define DX 1.0 // distance between spacial points in x-dimension, up and down
+#define DY 1.0 // distance between spacial points in y-dimension, left and right
 #define TSTOP 1.0 // end of time period, NTIME * DT
-
-// with these settings, 2 processes for the full interval: 42s
-// with these settings, 2 processes and adding 2 more in the middle: 34s
-// with these settings, 4 processes for the full interval: 47s
 
 
 // CFL: alpha * DT / DX^2 <= 1/2 then the simulation is considered stable
@@ -48,7 +45,7 @@ typedef struct _braid_App_struct
 /* Vector structure can contain anything, and be name anything as well */
 typedef struct _braid_Vector_struct
 {
-    double value[SIZE]; // temperatures at one time step
+    double value[SIZE * SIZE]; // temperatures in 2D grid at one time step
 } my_Vector;
 
 int
@@ -62,13 +59,26 @@ my_Step(braid_App        app,
     double tstop;              /* evolve to this time*/
     braid_StepStatusGetTstartTstop(status, &tstart, &tstop);
 
-    double val_old_prior = u->value[0];
+    double value_old[SIZE * SIZE];
 
-    for (int i = 1; i < SIZE - 1; i++) {
-        double val = val_old_prior;
-        val_old_prior = u->value[i];
-        
-        u->value[i] += (tstop - tstart) * ALPHA * (u->value[i+1] - 2 * u->value[i] + val) / (DX * DX);
+    for (int i = 0; i < SIZE * SIZE; i++) {
+        value_old[i] = u->value[i];
+    }
+
+    for (int i = 1; i < SIZE - 1; i++) { // i counting row
+        for (int j = 1; j < SIZE - 1; j++) { // j counting column
+
+            int index = i * SIZE + j;
+            int up = (i-1) * SIZE + j;
+            int down = (i+1) * SIZE + j;
+            int left = i * SIZE + (j-1);
+            int right = i * SIZE + (j+1);
+
+            u->value[index] = value_old[index] + DT * ALPHA * (
+                (value_old[up] - 2.0 * value_old[index] + value_old[down]) / (DX * DX) +
+                (value_old[left] - 2.0 * value_old[index] + value_old[right]) / (DY * DY)
+            );
+        }
     }
 
     return 0;
@@ -84,25 +94,20 @@ my_Init(braid_App     app,
     u = (my_Vector *) malloc(sizeof(my_Vector));
 
     if (t == 0.0) {
-        // example when the heat is only comming from the middle of the grid
         for (int i = 0; i < SIZE; i++) {
-            u->value[i] = 0.0; // Initial temperatures
+        for (int j = 0; j < SIZE; j++) {
+            if (i == SIZE / 2 && j == SIZE / 2) {
+                u->value[i * SIZE + j] = 1.0;
+            } else {
+                u->value[i * SIZE + j] = 0.0;
+            }
         }
-        // Set initial condition
-        u->value[0] = 1.0; // Heat source on the left
-        u->value[SIZE / 2] = 1.0; // Heat source in the middle
-
-        // sin wave between 0 and 1
-        // for (int i = 0; i < SIZE; i++) {
-        //     u->value[i] = 0.5 + 0.5 * sin(2 * M_PI * i / SIZE); // Sine wave between 0 and 1
-        // }
+    }
     } else {
-        for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE * SIZE; i++) {
             u->value[i] = 0.5; // random
         }
     }
-
-    // printf("for t = %f values are: %f  %f  %f  %f  %f\n", t, u->value[0], u->value[1], u->value[2], u->value[3], u->value[4]);
 
     *u_ptr = u;
 
@@ -118,7 +123,7 @@ my_Clone(braid_App     app,
 
     v = (my_Vector *) malloc(sizeof(my_Vector));
 
-    for (int i = 0; i < SIZE; i++) {
+    for (int i = 0; i < SIZE * SIZE; i++) {
         (v->value[i]) = (u->value[i]);
     }
     
@@ -142,7 +147,7 @@ my_Sum(braid_App     app,
        double        beta,
        braid_Vector  y)
 {
-    for (int i = 0; i < SIZE; i++) {
+    for (int i = 0; i < SIZE * SIZE; i++) {
         (y->value[i]) = alpha*(x->value[i]) + beta*(y->value[i]);
     }
     return 0;
@@ -155,7 +160,7 @@ my_SpatialNorm(braid_App     app,
 {
     double sum = 0.0;
     
-    for (int i = 0; i < SIZE; i++) {
+    for (int i = 0; i < SIZE * SIZE; i++) {
         sum += u->value[i] * u->value[i];
     }
 
@@ -174,7 +179,7 @@ my_Access(braid_App          app,
     int        iteration = 0;
 
     braid_AccessStatusGetTIndex(astatus, &index);
-    sprintf(filename, "%s.%04d.%04d.%03d", "ex-h_e.out", iteration, index, app->rank);
+    sprintf(filename, "%s.%04d.%04d.%03d", "ex-h_e_2D.out", iteration, index, app->rank);
 
     file = fopen(filename, "r");
 
@@ -182,14 +187,17 @@ my_Access(braid_App          app,
         iteration++;
         fclose(file);
 
-        sprintf(filename, "%s.%04d.%04d.%03d", "ex-h_e.out", iteration, index, app->rank);
+        sprintf(filename, "%s.%04d.%04d.%03d", "ex-h_e_2D.out", iteration, index, app->rank);
 
         file = fopen(filename, "r");
     }
     if (!(iteration != 0 && index == 0)) {
         file = fopen(filename, "w");
-        for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE * SIZE; i++) {
             fprintf(file, "%f ", u->value[i]);
+            if (i % SIZE == SIZE - 1) {
+                fprintf(file, "\n");
+            }
         }
         fprintf(file, "\n");
         fflush(file);
@@ -213,7 +221,7 @@ my_BufSize(braid_App          app,
            int                *size_ptr,
            braid_BufferStatus bstatus)
 {
-    *size_ptr = sizeof(double) * SIZE;
+    *size_ptr = sizeof(double) * SIZE * SIZE;
     return 0;
 }
 
@@ -225,8 +233,8 @@ my_BufPack(braid_App          app,
 {
     double *dbuffer = buffer;
 
-    memcpy(dbuffer, u->value, sizeof(double) * SIZE);
-    braid_BufferStatusSetSize( bstatus, sizeof(double) * SIZE );
+    memcpy(dbuffer, u->value, sizeof(double) * SIZE * SIZE);
+    braid_BufferStatusSetSize( bstatus, sizeof(double) * SIZE * SIZE );
 
     return 0;
 }
@@ -241,7 +249,7 @@ my_BufUnpack(braid_App          app,
     my_Vector *u;
 
     u = (my_Vector *) malloc(sizeof(my_Vector));
-    memcpy(u->value, dbuffer, sizeof(double) * SIZE);
+    memcpy(u->value, dbuffer, sizeof(double) * SIZE * SIZE);
     *u_ptr = u;
 
     return 0;
