@@ -1,6 +1,7 @@
 #include "_braid_dyn.h"
 #include "util.h"
-#include "dmr_dyn.h"
+#include "dmr.h"
+#include <stdbool.h>
 
 #ifndef DEBUG_DYN
 #define DEBUG_DYN 0
@@ -347,24 +348,18 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       // if adding or removing isnt possible, continue without adjusting
       if (((num_procs_add == 0) && (size - num_procs_sub > 0)) || ((size + num_procs_add <= max_procs) && (num_procs_sub == 0))) {
          //printf("-+-+-+--+--+-+-++--+---++- myid is: %d and old size: %d +-+-+-+-+-+-+-+-+\n", myid, size);
-         //MPI_Info info1;
+         MPI_Info info;
          MPI_Info_create(&info);
          sprintf(str, "%d", num_procs_sub);
          MPI_Info_set(info, "mpi_num_procs_sub", str);
          sprintf(str, "%d", num_procs_add);
          MPI_Info_set(info, "mpi_num_procs_add", str);
 
-         DMR_Set_parameters(info);
+         DMR_SET_INFO(info);
+         MPI_Info_free(&info);
 
-         braid_Int finalize_flag = 0;
+         DMR_RECONFIGURATION(-1, NULL, NULL, NULL);
 
-         DMR_RECONFIGURATION(finalize_flag);
-
-         if (finalize_flag == 1) {
-            return _braid_error_flag;
-         }
-
-         //MPI_Info_free(&info);
 
          //update new processes
          braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM);
@@ -392,6 +387,11 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       //MPI_Comm_size(comm_world, &size);
       //printf("-+-+-+--+--+-+-++--+---++- my new id is: %d new size after rearrange is: %d ++-+-+-+-+--+-+-+-+\n", myid, size);
    }
+
+   if (DMR_FINALIZE_FLAG) {
+      return _braid_error_flag;
+   }
+
    if (current_ts < globaltstop) {
       // compute the remainding time until tstop
 
@@ -590,7 +590,7 @@ braid_Init_Dyn(
    MPI_Comm comm;
 
    // newDyn
-   DMR_INIT();
+   DMR_INIT(-1, NULL, NULL);
 
    comm_world = DMR_INTERCOMM;
    comm = DMR_INTERCOMM;

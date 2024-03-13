@@ -21,8 +21,8 @@ else
 fi
 
 # Add the specified xbraid library and include paths to AM_LDFLAGS and AM_CFLAGS
-AM_LDFLAGS="-L$XBRAID_PATH $AM_LDFLAGS"
-AM_CFLAGS="-I$XBRAID_PATH $AM_CFLAGS"
+AM_LDFLAGS="-L$XBRAID_PATH/lib $AM_LDFLAGS"
+AM_CFLAGS="-I$XBRAID_PATH/include $AM_CFLAGS"
 AC_SUBST([XBRAID_PATH])
 
 # Add the --with-mpi option
@@ -32,7 +32,7 @@ AC_ARG_WITH([mpi],
   [MPI_PATH="$withval"],
   [MPI_PATH=""])
 
-# Check if the xbraid path is provided
+# Check if the mpi path is provided
 if test "x$MPI_PATH" != "x"; then
   AC_MSG_NOTICE([Using user-specified mpi path: $MPI_PATH])
 else
@@ -45,9 +45,32 @@ fi
 AM_LDFLAGS="-L$MPI_PATH/lib $AM_LDFLAGS"
 AM_CFLAGS="-I$MPI_PATH/include $AM_CFLAGS"
 AC_SUBST([MPI_PATH])
+
+
+# Add the --with-mpi option
+AC_ARG_WITH([dmr],
+  [AS_HELP_STRING([--with-dmr],
+    [Specify the path to dmr library and include directory])],
+  [DMR_PATH="$withval"],
+  [DMR_PATH=""])
+
+# Check if the dmr path is provided
+if test "x$DMR_PATH" != "x"; then
+  AC_MSG_NOTICE([Using user-specified dmr path: $DMR_PATH])
+else
+  AC_MSG_NOTICE([No dmr path specified, using default])
+  # Set a default path or behavior if not specified
+  DMR_PATH="/usr/local"
+fi
+
+# Add the specified dmr library and include paths to AM_LDFLAGS and AM_CFLAGS
+AM_LDFLAGS="-L$DMR_PATH/lib $AM_LDFLAGS"
+AM_CFLAGS="-I$DMR_PATH/include $AM_CFLAGS"
+AC_SUBST([DMR_PATH])
+
+
 AC_SUBST([AM_CFLAGS])
 AC_SUBST([AM_LDFLAGS])
-
 
 
 # Define the installation prefix
