@@ -11,6 +11,7 @@ ex-heat_equation_2D
 compile
 install-sh
 Makefile
+!src/examples/Makefile
 aclocal.m4
 missing
 configure
