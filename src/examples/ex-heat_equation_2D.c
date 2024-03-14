@@ -303,6 +303,14 @@ int main (int argc, char *argv[])
     braid_SetMaxLevels(braid_dyn_get_original_core(core_dyn), 2);
     braid_SetAbsTol(braid_dyn_get_original_core(core_dyn), 1.0e-06);
 
+    /* Set the info for reconfigurations */
+    MPI_Info info;
+    MPI_Info_create(&info);
+    MPI_Info_set(info, "mpi_num_procs_sub", "2");
+    braid_Set_Info(info);
+    MPI_Info_free(&info);
+
+
     //newDyn
     braid_Drive_Dyn(core_dyn);
 

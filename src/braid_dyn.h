@@ -68,6 +68,9 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn            /**< braid_Core (_braid_Core
 
 braid_Core braid_dyn_get_original_core(braid_Core_dyn core_dyn);
 
+braid_Int
+braid_Set_Info(MPI_Info info);
+
 #ifdef __cplusplus
 }
 #endif

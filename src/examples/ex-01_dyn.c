@@ -269,6 +269,13 @@ int main (int argc, char *argv[])
     braid_SetAbsTol(braid_dyn_get_original_core(core_dyn), 1.0e-06);
     braid_SetCFactor(braid_dyn_get_original_core(core_dyn), -1, 2);
 
+    /* Set the info for reconfigurations */
+    MPI_Info info;
+    MPI_Info_create(&info);
+    MPI_Info_set(info, "mpi_num_procs_add", "2");
+    braid_Set_Info(info);
+    MPI_Info_free(&info);
+
     //newDyn
     braid_Drive_Dyn(core_dyn);
 

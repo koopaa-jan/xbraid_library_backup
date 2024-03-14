@@ -7,16 +7,18 @@
 #define DEBUG_DYN 0
 #endif
 
+// counts the iteration
+static braid_Int iteration = 0;
+
 /*--------------------------------------------------------------------------
  *--------------------------------------------------------------------------*/
 
 braid_Int
-braid_Update_Dyn_Procs(braid_Int *iteration, MPI_Comm comm_world)
+braid_Update_Dyn_Procs(braid_Int *iter, MPI_Comm comm_world)
 {
    // sending counter of iteration from first process to all other including the dynamically added process
    // so they get the knowledge of how far the algorithm is so they can calculate their parameters correctly
-   MPI_Bcast(iteration, 1, MPI_INT, 0, comm_world);
-
+   MPI_Bcast(iter, 1, MPI_INT, 0, comm_world);
    return _braid_error_flag;
 }
 
@@ -239,12 +241,6 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
 
    // gupper is global size of fine grid
    _braid_CoreElt(core, gupper) = (interval_len / trange_per_ts);
-
-   // counts the iteration
-   braid_Int iteration = 0;
-
-   // update new processes with the current iteration counter
-   braid_Update_Dyn_Procs(&iteration, comm_world);
    current_ts = globaltstart + (interval_len * iteration);
 
 
@@ -346,23 +342,19 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       braid_Int num_procs_add = 2;
 
       // if adding or removing isnt possible, continue without adjusting
-      if (((num_procs_add == 0) && (size - num_procs_sub > 0)) || ((size + num_procs_add <= max_procs) && (num_procs_sub == 0))) {
+      //if (((num_procs_add == 0) && (size - num_procs_sub > 0)) || ((size + num_procs_add <= max_procs) && (num_procs_sub == 0))) {
          //printf("-+-+-+--+--+-+-++--+---++- myid is: %d and old size: %d +-+-+-+-+-+-+-+-+\n", myid, size);
-         MPI_Info info;
-         MPI_Info_create(&info);
-         sprintf(str, "%d", num_procs_sub);
-         MPI_Info_set(info, "mpi_num_procs_sub", str);
-         sprintf(str, "%d", num_procs_add);
-         MPI_Info_set(info, "mpi_num_procs_add", str);
 
-         DMR_SET_INFO(info);
-         MPI_Info_free(&info);
 
-         DMR_RECONFIGURATION(-1, NULL, NULL, NULL);
+         DMR_RECONFIGURATION(
+               braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM),
+               NULL, 
+               NULL, 
+               NULL);
 
 
          //update new processes
-         braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM);
+         //braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM);
 
          // updating parameters
          comm_world = DMR_INTERCOMM;
@@ -372,9 +364,9 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
          _braid_CoreElt(core, comm)            = comm_world;
          _braid_CoreElt(core, myid_world)      = myid;
          _braid_CoreElt(core, myid)            = myid;
-      } else {
-         printf("reconfiguration was skipped as removing or adding processes wasnt possible!\n");
-      }
+      //} else {
+      //   printf("reconfiguration was skipped as removing or adding processes wasnt possible!\n");
+      //}
 
 
       // ending time measure for duration of processes change and update
@@ -382,8 +374,6 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       
       printf("time for duration of processes change and update was: %f for the process with id: %d\n", ltime_procs, myid);
       
-
-
       //MPI_Comm_size(comm_world, &size);
       //printf("-+-+-+--+--+-+-++--+---++- my new id is: %d new size after rearrange is: %d ++-+-+-+-+--+-+-+-+\n", myid, size);
    }
@@ -590,7 +580,7 @@ braid_Init_Dyn(
    MPI_Comm comm;
 
    // newDyn
-   DMR_INIT(-1, NULL, NULL);
+   DMR_INIT(-1, NULL, braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM));
 
    comm_world = DMR_INTERCOMM;
    comm = DMR_INTERCOMM;
@@ -769,6 +759,12 @@ braid_Init_Dyn(
 
    *core_ptr = core_dyn;
 
+   return _braid_error_flag;
+}
+
+braid_Int
+braid_Set_Info(MPI_Info info){
+   DMR_SET_INFO(info);
    return _braid_error_flag;
 }
 
