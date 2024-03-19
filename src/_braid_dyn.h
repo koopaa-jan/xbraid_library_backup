@@ -28,13 +28,6 @@ typedef struct _braid_Core_struct_dyn
 
 
 braid_Int
-_braid_UGetVector_Dyn(braid_Core        core,
-                  braid_Int         level,
-                  braid_Int         index,
-                  braid_Vector *u_ptr);
-
-
-braid_Int
 _braid_USetVector_Dyn(braid_Core        core,
                   braid_Int         level,
                   braid_Int         index,

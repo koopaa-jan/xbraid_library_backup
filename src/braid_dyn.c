@@ -201,7 +201,7 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
    braid_Int            ntime           = _braid_CoreElt(core, ntime);
    //newDyn
    braid_Real           interval_len    = _braid_CoreDynElt(core_dyn, interval_len);
-   braid_Int            max_procs       = _braid_CoreDynElt(core_dyn, max_procs);
+   // braid_Int            max_procs       = _braid_CoreDynElt(core_dyn, max_procs);
 
    braid_App            app             = _braid_CoreElt(core, app);
 
@@ -246,7 +246,7 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
 
    // repeat as long as the next iteration(which has the length of interval_len) wouldnt exceed tstop
    for (; current_ts < globaltstop - interval_len; current_ts += interval_len) {
-      sleep(1);
+      // sleep(1);
       ++iteration;
       //set parameters
       _braid_CoreElt(core, tstart) = current_ts;
@@ -271,13 +271,7 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       braid_Real gtime_sol_vec;
       braid_Real ltime_sol_vec = _braid_MPI_Wtime(core, 1);
 
-      // allocating parameters for transfering solution vector
-      // and getting size of solution vector
-      braid_BufferStatus bstatus = (braid_BufferStatus)core;
-      braid_Int sol_vec_size;
-      _braid_CoreFcn(core, bufsize)(app, &sol_vec_size, bstatus);
 
-      char *buffer = (char *)malloc(sol_vec_size);
 
       // adjusting sol_vec distribution so not the last one but the last one with a valid sol_vec is distributing
       // if number of procs available is higher than number of ts to be computed, then the vector with the sol vector is
@@ -287,34 +281,46 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       if (num_procs_needed < size) {
          sol_vec_id = (interval_len / trange_per_ts);
       }
-      // printf("sol_vec_id: %d for %d processes and %d processes needed\n", sol_vec_id, size, num_procs_needed);
+      
+      // allocating parameters for transfering solution vector
+      // and getting size of solution vector
+      braid_BufferStatus bstatus = (braid_BufferStatus)core;
+      braid_Int sol_vec_size;
+
+      char *buffer;
+
+      if ((myid == sol_vec_id || myid == 0) && size > 1) {
+         _braid_CoreFcn(core, bufsize)(app, &sol_vec_size, bstatus);
+
+         buffer = (char *)malloc(sol_vec_size);
+      }
 
       if (myid == sol_vec_id) {
-         if (myid == size - 1) {
-            //maybe this if is not necessary as only the else could work
-            //last processor gets solution vector
-            // printf("getting UGetLast of last processor\n");
-            _braid_UGetLast(core, &transfer_vector);
-            // _braid_CoreDynFcn(core_dyn, getValue)(transfer_vector->userVector);
-         } else {
+         // if (myid == size - 1) {
+         //    //maybe this if is not necessary as only the else could work
+         //    //last processor gets solution vector
+         //    // printf("getting UGetLast of last processor\n");
+         //    _braid_UGetLast(core, &transfer_vector);
+         //    // _braid_CoreDynFcn(core_dyn, getValue)(transfer_vector->userVector);
+         // } else {
             // get sol vector from processes with the last time step that is not the last process, so UGetLast cant be used
-            _braid_Grid **grids = _braid_CoreElt(core, grids);
-            transfer_vector->userVector = _braid_GridElt(grids[0], ulast)->userVector;
-         }
+         _braid_Grid **grids = _braid_CoreElt(core, grids);
+         transfer_vector->userVector = _braid_GridElt(grids[0], ulast)->userVector;
+         // }
 
          // only send when there are more than one processes
          if (myid != 0) {
 
             // serializing data of solution vector
             _braid_CoreFcn(core, bufpack)(app, transfer_vector->userVector, buffer, bstatus);
+            MPI_Send(buffer, sol_vec_size, MPI_BYTE, 0, 0, comm_world);
          }
       }
       
       if (size > 1) {
-         // broadcasting solution vector, so every process has a copy of it
-         MPI_Bcast(buffer, sol_vec_size, MPI_BYTE, sol_vec_id, comm_world);
          
-         if (myid != sol_vec_id) {
+         if (myid == 0) {
+            MPI_Recv(buffer, sol_vec_size, MPI_BYTE, sol_vec_id, 0, comm_world, MPI_STATUS_IGNORE);
             // deserializing data of solution vector
             _braid_CoreFcn(core, bufunpack)(app, buffer, &transfer_vector->userVector, bstatus);
 
@@ -323,7 +329,9 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
          }
       }
 
-      free(buffer);
+      if ((myid == sol_vec_id || myid == 0) && size > 1) {
+         free(buffer);
+      }
 
       // ending time measure for distribution of solution vector
       ltime_sol_vec = _braid_MPI_Wtime(core, 1) - ltime_sol_vec;
@@ -338,8 +346,8 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       braid_Real ltime_procs = _braid_MPI_Wtime(core, 1);
       
       // changing amount of processes
-      braid_Int num_procs_sub = 0;
-      braid_Int num_procs_add = 2;
+      // braid_Int num_procs_sub = 0;
+      // braid_Int num_procs_add = 2;
 
       // if adding or removing isnt possible, continue without adjusting
       //if (((num_procs_add == 0) && (size - num_procs_sub > 0)) || ((size + num_procs_add <= max_procs) && (num_procs_sub == 0))) {
@@ -589,7 +597,7 @@ braid_Init_Dyn(
    myid = DMR_comm_rank;
    world_size = DMR_comm_size;
 
-   printf("Size:%d and rank:%d\n", world_size, myid_world);
+   // printf("Size:%d and rank:%d\n", world_size, myid_world);
 
    core_dyn = _braid_CTAlloc(_braid_Core_dyn, 1);
    original_core = _braid_CTAlloc(_braid_Core, 1);
