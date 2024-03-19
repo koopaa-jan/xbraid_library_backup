@@ -253,9 +253,9 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       _braid_CoreElt(core, tstop) = current_ts + interval_len;
       _braid_CoreElt(core, ntime) = interval_len / trange_per_ts;
 
-      printf("1 ++++++++++++++ tstart: %f tstop: %f ntime: %f gupper: %f\n",
-       current_ts, current_ts + interval_len, interval_len / trange_per_ts,
-        (interval_len / trange_per_ts));
+      // printf("1 ++++++++++++++ tstart: %f tstop: %f ntime: %f gupper: %f\n",
+      //  current_ts, current_ts + interval_len, interval_len / trange_per_ts,
+      //   (interval_len / trange_per_ts));
 
 
       braid_Drive_Dyn_Iterate(core, transfer_vector->userVector);
@@ -296,23 +296,13 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       }
 
       if (myid == sol_vec_id) {
-         // if (myid == size - 1) {
-         //    //maybe this if is not necessary as only the else could work
-         //    //last processor gets solution vector
-         //    // printf("getting UGetLast of last processor\n");
-         //    _braid_UGetLast(core, &transfer_vector);
-         //    // _braid_CoreDynFcn(core_dyn, getValue)(transfer_vector->userVector);
-         // } else {
+         if (myid == size - 1) {
+            _braid_UGetLast(core, &transfer_vector);
+         } else {
             // get sol vector from processes with the last time step that is not the last process, so UGetLast cant be used
-         sleep(2);
-         printf("before grid\n");
-         sleep(2);
-         _braid_Grid **grids = _braid_CoreElt(core, grids);
-         transfer_vector->userVector = _braid_GridElt(grids[0], ulast)->userVector;
-         sleep(2);
-         printf("after grid\n");
-         sleep(2);
-         // }
+            _braid_Grid **grids = _braid_CoreElt(core, grids);
+            transfer_vector->userVector = _braid_GridElt(grids[0], ulast)->userVector;
+         }
 
          // only send when there are more than one processes
          if (myid != 0) {
@@ -321,10 +311,6 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
             MPI_Send(buffer, sol_vec_size, MPI_BYTE, 0, 9, comm_world);
          }
       }
-
-      sleep(2);
-      printf("before recv\n");
-      sleep(2);
       
       if (size > 1 && myid == 0) {
          MPI_Recv(buffer, sol_vec_size, MPI_BYTE, sol_vec_id, 9, comm_world, MPI_STATUS_IGNORE);
@@ -356,19 +342,11 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       //if (((num_procs_add == 0) && (size - num_procs_sub > 0)) || ((size + num_procs_add <= max_procs) && (num_procs_sub == 0))) {
          //printf("-+-+-+--+--+-+-++--+---++- myid is: %d and old size: %d +-+-+-+-+-+-+-+-+\n", myid, size);
 
-      sleep(2);
-      printf("before reconf\n");
-      sleep(2);
-
       DMR_RECONFIGURATION(
             braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM),
             NULL, 
             NULL, 
             NULL);
-
-      sleep(2);
-      printf("after reconf\n");
-      sleep(2);
 
       //update new processes
       //braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM);
@@ -410,9 +388,9 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       _braid_CoreElt(core, gupper) = ((globaltstop - current_ts) / trange_per_ts);
 
 
-      printf("2 ++++++++++++++ tstart: %f tstop: %f ntime: %f gupper: %f myid: %d\n",
-       current_ts, globaltstop, (globaltstop - current_ts) / trange_per_ts,
-        ((globaltstop - current_ts) / trange_per_ts), myid);
+      // printf("2 ++++++++++++++ tstart: %f tstop: %f ntime: %f gupper: %f myid: %d\n",
+      //  current_ts, globaltstop, (globaltstop - current_ts) / trange_per_ts,
+      //   ((globaltstop - current_ts) / trange_per_ts), myid);
 
       braid_Drive_Dyn_Iterate(core, transfer_vector->userVector);
 
@@ -606,7 +584,7 @@ braid_Init_Dyn(
    myid = DMR_comm_rank;
    world_size = DMR_comm_size;
 
-   printf("Size:%d and rank:%d\n", world_size, myid_world);
+   // printf("Size:%d and rank:%d\n", world_size, myid_world);
 
    core_dyn = _braid_CTAlloc(_braid_Core_dyn, 1);
    original_core = _braid_CTAlloc(_braid_Core, 1);
