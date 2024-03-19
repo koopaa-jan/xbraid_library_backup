@@ -253,9 +253,9 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       _braid_CoreElt(core, tstop) = current_ts + interval_len;
       _braid_CoreElt(core, ntime) = interval_len / trange_per_ts;
 
-      // printf("1 ++++++++++++++ tstart: %f tstop: %f ntime: %f gupper: %f\n",
-      //  current_ts, current_ts + interval_len, interval_len / trange_per_ts,
-      //   (interval_len / trange_per_ts));
+      printf("1 ++++++++++++++ tstart: %f tstop: %f ntime: %f gupper: %f\n",
+       current_ts, current_ts + interval_len, interval_len / trange_per_ts,
+        (interval_len / trange_per_ts));
 
 
       braid_Drive_Dyn_Iterate(core, transfer_vector->userVector);
@@ -294,6 +294,10 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
 
          buffer = (char *)malloc(sol_vec_size);
       }
+
+      sleep(2);
+      printf("before if\n");
+      sleep(2);
 
       if (myid == sol_vec_id) {
          // if (myid == size - 1) {
@@ -353,25 +357,31 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       //if (((num_procs_add == 0) && (size - num_procs_sub > 0)) || ((size + num_procs_add <= max_procs) && (num_procs_sub == 0))) {
          //printf("-+-+-+--+--+-+-++--+---++- myid is: %d and old size: %d +-+-+-+-+-+-+-+-+\n", myid, size);
 
+      sleep(2);
+      printf("before reconf\n");
+      sleep(2);
 
-         DMR_RECONFIGURATION(
-               braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM),
-               NULL, 
-               NULL, 
-               NULL);
+      DMR_RECONFIGURATION(
+            braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM),
+            NULL, 
+            NULL, 
+            NULL);
 
+      sleep(2);
+      printf("after reconf\n");
+      sleep(2);
 
-         //update new processes
-         //braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM);
+      //update new processes
+      //braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM);
 
-         // updating parameters
-         comm_world = DMR_INTERCOMM;
-         myid = DMR_comm_rank;
+      // updating parameters
+      comm_world = DMR_INTERCOMM;
+      myid = DMR_comm_rank;
 
-         _braid_CoreElt(core, comm_world)      = comm_world;
-         _braid_CoreElt(core, comm)            = comm_world;
-         _braid_CoreElt(core, myid_world)      = myid;
-         _braid_CoreElt(core, myid)            = myid;
+      _braid_CoreElt(core, comm_world)      = comm_world;
+      _braid_CoreElt(core, comm)            = comm_world;
+      _braid_CoreElt(core, myid_world)      = myid;
+      _braid_CoreElt(core, myid)            = myid;
       //} else {
       //   printf("reconfiguration was skipped as removing or adding processes wasnt possible!\n");
       //}
@@ -401,9 +411,9 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       _braid_CoreElt(core, gupper) = ((globaltstop - current_ts) / trange_per_ts);
 
 
-      // printf("2 ++++++++++++++ tstart: %f tstop: %f ntime: %f gupper: %f myid: %d\n",
-      //  current_ts, globaltstop, (globaltstop - current_ts) / trange_per_ts,
-      //   ((globaltstop - current_ts) / trange_per_ts), myid);
+      printf("2 ++++++++++++++ tstart: %f tstop: %f ntime: %f gupper: %f myid: %d\n",
+       current_ts, globaltstop, (globaltstop - current_ts) / trange_per_ts,
+        ((globaltstop - current_ts) / trange_per_ts), myid);
 
       braid_Drive_Dyn_Iterate(core, transfer_vector->userVector);
 
@@ -597,7 +607,7 @@ braid_Init_Dyn(
    myid = DMR_comm_rank;
    world_size = DMR_comm_size;
 
-   // printf("Size:%d and rank:%d\n", world_size, myid_world);
+   printf("Size:%d and rank:%d\n", world_size, myid_world);
 
    core_dyn = _braid_CTAlloc(_braid_Core_dyn, 1);
    original_core = _braid_CTAlloc(_braid_Core, 1);
