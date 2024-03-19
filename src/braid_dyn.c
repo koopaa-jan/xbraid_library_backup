@@ -289,15 +289,11 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
 
       char *buffer;
 
-      if ((myid == sol_vec_id || myid == 0) && size > 1) {
+      if (((myid == sol_vec_id) || (myid == 0)) && size > 1) {
          _braid_CoreFcn(core, bufsize)(app, &sol_vec_size, bstatus);
 
          buffer = (char *)malloc(sol_vec_size);
       }
-
-      sleep(2);
-      printf("before if\n");
-      sleep(2);
 
       if (myid == sol_vec_id) {
          // if (myid == size - 1) {
@@ -308,29 +304,32 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
          //    // _braid_CoreDynFcn(core_dyn, getValue)(transfer_vector->userVector);
          // } else {
             // get sol vector from processes with the last time step that is not the last process, so UGetLast cant be used
+         sleep(2);
+         printf("before grid\n");
+         sleep(2);
          _braid_Grid **grids = _braid_CoreElt(core, grids);
          transfer_vector->userVector = _braid_GridElt(grids[0], ulast)->userVector;
+         sleep(2);
+         printf("after grid\n");
+         sleep(2);
          // }
 
          // only send when there are more than one processes
          if (myid != 0) {
-
             // serializing data of solution vector
             _braid_CoreFcn(core, bufpack)(app, transfer_vector->userVector, buffer, bstatus);
-            MPI_Send(buffer, sol_vec_size, MPI_BYTE, 0, 0, comm_world);
+            MPI_Send(buffer, sol_vec_size, MPI_BYTE, 0, 9, comm_world);
          }
       }
-      
-      if (size > 1) {
-         
-         if (myid == 0) {
-            MPI_Recv(buffer, sol_vec_size, MPI_BYTE, sol_vec_id, 0, comm_world, MPI_STATUS_IGNORE);
-            // deserializing data of solution vector
-            _braid_CoreFcn(core, bufunpack)(app, buffer, &transfer_vector->userVector, bstatus);
 
-            // printf("after receiving\n");
-            // _braid_CoreDynFcn(core_dyn, getValue)(transfer_vector->userVector);
-         }
+      sleep(2);
+      printf("before recv\n");
+      sleep(2);
+      
+      if (size > 1 && myid == 0) {
+         MPI_Recv(buffer, sol_vec_size, MPI_BYTE, sol_vec_id, 9, comm_world, MPI_STATUS_IGNORE);
+         // deserializing data of solution vector
+         _braid_CoreFcn(core, bufunpack)(app, buffer, &transfer_vector->userVector, bstatus);
       }
 
       if ((myid == sol_vec_id || myid == 0) && size > 1) {
