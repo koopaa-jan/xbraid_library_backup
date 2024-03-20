@@ -296,14 +296,23 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       }
 
       if (myid == sol_vec_id) {
-         _braid_UGetLast(core, &transfer_vector);
-         // if (myid == size - 1) {
-         //    _braid_UGetLast(core, &transfer_vector);
-         // } else {
-         //    // get sol vector from processes with the last time step that is not the last process, so UGetLast cant be used
-         //    _braid_Grid **grids = _braid_CoreElt(core, grids);
-         //    transfer_vector->userVector = _braid_GridElt(grids[0], ulast)->userVector;
-         // }
+         if (myid == size - 1) {
+            _braid_UGetLast(core, &transfer_vector);
+         } else {
+            // get sol vector from processes with the last time step that is not the last process, so UGetLast cant be used
+            _braid_Grid       **grids    = _braid_CoreElt(core, grids);
+            braid_Int           cfactor  = _braid_GridElt(grids[0], cfactor);
+
+            braid_BaseVector bv;
+            if ( (_braid_CoreElt(core, storage) < 0) && !(_braid_IsCPoint(gupper, cfactor)) ) { 
+               bv = _braid_GridElt(grids[0], ulast);
+               transfer_vector->userVector = bv->userVector;
+            }
+            else {
+               _braid_UGetVectorRef(core, 0, gupper, &bv);
+               transfer_vector->userVector = bv->userVector;
+            }
+         }
 
          // only send when there are more than one processes
          if (myid != 0) {
