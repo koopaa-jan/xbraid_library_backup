@@ -302,6 +302,7 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
             // get sol vector from processes with the last time step that is not the last process, so UGetLast cant be used
             _braid_Grid       **grids    = _braid_CoreElt(core, grids);
             braid_Int           cfactor  = _braid_GridElt(grids[0], cfactor);
+            braid_Int           gupper   = _braid_CoreElt(core, gupper);
 
             braid_BaseVector bv;
             if ( (_braid_CoreElt(core, storage) < 0) && !(_braid_IsCPoint(gupper, cfactor)) ) { 
