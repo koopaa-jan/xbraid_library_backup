@@ -100,8 +100,8 @@ _braid_USetVector_Dyn(braid_Core        core,
   }
 
 // newDyn
-   free(u->bar);
-   free(u);
+   // free(u->bar);
+   // free(u);
 
    return _braid_error_flag;
 }

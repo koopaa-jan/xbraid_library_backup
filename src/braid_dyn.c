@@ -398,7 +398,7 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
 
    }
 
-   free(transfer_vector);
+   // free(transfer_vector);
 
    return _braid_error_flag;
 }
