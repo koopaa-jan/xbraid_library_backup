@@ -367,7 +367,9 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       // ending time measure for duration of processes change and update
       ltime_procs = _braid_MPI_Wtime(core, 1) - ltime_procs;
       
-      printf("time for duration of processes change and update was: %f for the process with id: %d\n", ltime_procs, myid);
+      if (myid == 0) {
+         printf("time for duration of processes change and update was: %f\n", ltime_procs);
+      }
       
       //MPI_Comm_size(comm_world, &size);
       //printf("-+-+-+--+--+-+-++--+---++- my new id is: %d new size after rearrange is: %d ++-+-+-+-+--+-+-+-+\n", myid, size);
@@ -395,6 +397,8 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       braid_Drive_Dyn_Iterate(core, transfer_vector->userVector);
 
    }
+
+   free(transfer_vector);
 
    return _braid_error_flag;
 }
