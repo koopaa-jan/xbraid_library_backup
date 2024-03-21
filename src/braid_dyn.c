@@ -257,8 +257,15 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       //  current_ts, current_ts + interval_len, interval_len / trange_per_ts,
       //   (interval_len / trange_per_ts));
 
+      sleep(2);
+      printf("before iterate\n");
+      sleep(2);
 
       braid_Drive_Dyn_Iterate(core, transfer_vector->userVector);
+
+      sleep(2);
+      printf("after iterate\n");
+      sleep(2);
 
       MPI_Barrier(comm_world);
 
@@ -353,11 +360,18 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
       //if (((num_procs_add == 0) && (size - num_procs_sub > 0)) || ((size + num_procs_add <= max_procs) && (num_procs_sub == 0))) {
          //printf("-+-+-+--+--+-+-++--+---++- myid is: %d and old size: %d +-+-+-+-+-+-+-+-+\n", myid, size);
 
+      sleep(2);
+      printf("before reconf\n");
+      sleep(2);
       DMR_RECONFIGURATION(
             braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM),
             NULL, 
             NULL, 
             NULL);
+      
+      sleep(2);
+      printf("after reconf\n");
+      sleep(2);
 
       //update new processes
       //braid_Update_Dyn_Procs(&iteration, DMR_INTERCOMM);
