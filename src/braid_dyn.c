@@ -387,6 +387,7 @@ braid_Drive_Dyn(braid_Core_dyn  core_dyn)
    }
 
    if (DMR_FINALIZE_FLAG) {
+      free(transfer_vector);
       return _braid_error_flag;
    }
 
@@ -512,8 +513,16 @@ braid_Destroy_Dyn(braid_Core_dyn core_dyn) {
       fclose(_braid_printfile);
    }
 
+   sleep(2);
+   printf("before finalize\n");
+   sleep(2);
+
    //newDyn
    DMR_FINALIZE0();
+
+   sleep(2);
+   printf("after finalize\n");
+   sleep(2);
 
    return _braid_error_flag;
 }
